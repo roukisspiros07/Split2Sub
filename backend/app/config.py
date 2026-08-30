@@ -8,6 +8,9 @@ class Settings(BaseSettings):
 
     app_name: str = "group-subscription-manager"
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/group_subs"
+    jwt_secret: str
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 1440
 
 
 @lru_cache
