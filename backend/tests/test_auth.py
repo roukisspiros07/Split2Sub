@@ -2,6 +2,8 @@ from uuid import uuid4
 
 from httpx import AsyncClient
 
+from app.main import app
+
 
 async def _unique_email() -> str:
     return f"auth-test-{uuid4().hex[:12]}@example.com"
@@ -63,3 +65,38 @@ async def test_login_wrong_password_rejected(client: AsyncClient) -> None:
         json={"email": email, "password": "wrong-password"},
     )
     assert login.status_code == 401
+
+
+async def test_login_rate_limited(client: AsyncClient) -> None:
+    app.state.limiter.enabled = True
+    try:
+        for _ in range(6):
+            email = await _unique_email()
+            response = await client.post(
+                "/auth/login",
+                json={"email": email, "password": "wrong-password"},
+            )
+    finally:
+        app.state.limiter.enabled = False
+
+    assert response.status_code == 429
+
+
+async def test_login_per_email_throttle(client: AsyncClient) -> None:
+    email = await _unique_email()
+    await client.post(
+        "/auth/register",
+        json={"email": email, "password": "correct-horse-battery", "display_name": "Bob"},
+    )
+
+    first = await client.post(
+        "/auth/login",
+        json={"email": email, "password": "wrong-password"},
+    )
+    assert first.status_code == 401
+
+    second = await client.post(
+        "/auth/login",
+        json={"email": email, "password": "correct-horse-battery"},
+    )
+    assert second.status_code == 429

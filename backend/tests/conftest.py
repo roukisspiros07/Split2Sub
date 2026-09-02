@@ -6,6 +6,11 @@ from httpx import ASGITransport, AsyncClient
 from app.main import app
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _disable_rate_limiter() -> None:
+    app.state.limiter.enabled = False
+
+
 @pytest.fixture
 async def client() -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app)
