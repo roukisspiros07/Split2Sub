@@ -4,7 +4,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
 from app.rate_limit import limiter
-from app.routers import auth, health
+from app.routers import auth, groups, health, invites
 
 
 def _rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
@@ -18,6 +18,8 @@ def create_app() -> FastAPI:
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     app.include_router(health.router)
     app.include_router(auth.router)
+    app.include_router(groups.router)
+    app.include_router(invites.router)
     return app
 
 
